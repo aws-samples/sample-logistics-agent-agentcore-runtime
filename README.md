@@ -10,22 +10,24 @@ This sample demonstrates building a logistics tracking agent hosted on Amazon Be
 
 This project is deployed in two parts using Infrastructure as Code (IaC):
 
-**Part 1: Base Infrastructure with AWS CloudFormation**
+**Part 1: Base infrastructure deployment with AWS CloudFormation**
 
 CloudFormation templates (YAML files) are used to deploy the foundational infrastructure:
-- VPC with public and private subnets
+- Amazon VPC with public and private subnets
+- Internet Gateway
 - NAT Gateway for internet access
-- VPC Endpoints (Secrets Manager, SSM)
-- RDS PostgreSQL database
-- Security groups and networking
-- Helper EC2 instance for database setup
+- Amazon VPC Endpoints
+- Amazon RDS database
+- Security groups and route tables
+- Amazon EC2 instance to assist with database setup
 
 **Part 2: AgentCore Runtime with AWS CDK**
 
 AWS Cloud Development Kit (CDK) is then used to deploy the agent to Amazon Bedrock AgentCore Runtime:
 - Amazon Bedrock AgentCore Runtime
 - IAM roles and policies
-- Agent code packaging and deployment
+- Agent code packaging script 
+- Amazon S3 assets for direct code deployment
 
 **What is the difference between AWS CloudFormation and AWS Cloud Development Kit?** AWS CDK is a higher-level framework that synthesizes CloudFormation templates from code (Python, TypeScript, etc.) when deployed. We use CloudFormation directly for the infrastructure, while CDK is used for the agent deployment because it provides better abstractions for packaging code, managing assets, and handling complex deployment logic. Both ultimately deploy via CloudFormation stacks.
 
