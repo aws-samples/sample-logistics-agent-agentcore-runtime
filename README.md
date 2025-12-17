@@ -43,6 +43,7 @@ This multi-step approach separates the foundational infrastructure from the agen
 | AWS CLI | 2.x | AWS resource management |
 | Docker | 20.x | Container builds |
 | Git | Any | Repository cloning |
+| pip | Any | package management |
 
 **AWS Requirements:**
 - AWS Account with administrator permissions
@@ -60,7 +61,7 @@ This multi-step approach separates the foundational infrastructure from the agen
 ```bash
 # Clone the repository (if not already done)
 git clone <repository-url>
-cd agentcore-runtime-samples
+cd sample-logistics-agent-agentcore-runtime
 
 # Create and activate virtual environment at the root level
 python3 -m venv venv
@@ -80,10 +81,6 @@ Ensure Docker is running:
 
 **macOS/Windows:** Start Docker Desktop application
 
-**Linux:**
-```bash
-sudo systemctl start docker
-```
 
 ### Step 1.3: Create OpenAI API Key Secret
 
@@ -433,7 +430,7 @@ To remove all resources:
 
 ```bash
 # Delete CDK stack
-cd agentcore-runtime-samples/cdk
+cd sample-logistics-agent-agentcore-runtime/cdk
 cdk destroy
 ```
 
