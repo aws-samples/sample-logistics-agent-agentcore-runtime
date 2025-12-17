@@ -10,18 +10,29 @@ This sample demonstrates building a logistics tracking agent hosted on Amazon Be
 
 This project is deployed in two parts using Infrastructure as Code (IaC):
 
-**Part 1: Base infrastructure deployment with AWS CloudFormation**
+**Phase 1: Base infrastructure deployment with AWS CloudFormation**
 
 CloudFormation templates (YAML files) are used to deploy the foundational infrastructure:
 - Amazon VPC with public and private subnets
-- Internet Gateway
+- Internet Gateway for internet access
 - NAT Gateway for internet access
-- Amazon VPC Endpoints
 - Amazon RDS database
 - Security groups and route tables
-- Amazon EC2 instance to assist with database setup
+- AWS Secrets Manager secrets for database credentials
+- AWS Systems Manager Parameter Store parameters for RDS connection details
+- Amazon VPC Endpoints for AWS Secrets Manager, Amazon Bedrock AgentCore Runtime, Amazon CloudWatch Logs, and AWS Systems Manager
 
-**Part 2: AgentCore Runtime with AWS CDK**
+
+**Phase 2: Database seed helper infrastructure deployment with AWS CloudFormation**
+
+CloudFormation templates (YAML files) are used to deploy the infrastructure needed to seed the database:
+
+- Amazon EC2 instance to assist with database setup
+- Amazon S3 bucket for file upload
+- Security groups
+- IAM Role for permissions
+
+**Phase 3: Amazon Bedrock AgentCore Runtime with AWS CDK**
 
 AWS Cloud Development Kit (CDK) is then used to deploy the agent to Amazon Bedrock AgentCore Runtime:
 - Amazon Bedrock AgentCore Runtime
