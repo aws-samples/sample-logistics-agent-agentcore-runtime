@@ -1,0 +1,170 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Temporary EC2 instance to apply database schema via SSM Session Manager'
+
+Parameters:
+  RDSStackName:
+    Type: String
+    Description: Name of the RDS VPC CloudFormation stack
+    Default: rds-vpc-stack
+  
+  LatestAmiId:
+    Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
+    Default: /aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-x86_64
+    Description: Latest Amazon Linux 2023 AMI
+
+Resources:
+  # S3 Bucket for SQL files
+  SQLFilesBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub 'db-setup-sql-files-${AWS::AccountId}'
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      VersioningConfiguration:
+        Status: Enabled
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+            BucketKeyEnabled: true
+      LifecycleConfiguration:
+        Rules:
+          - Id: DeleteAfter7Days
+            Status: Enabled
+            ExpirationInDays: 7
+      Tags:
+        - Key: Name
+          Value: DB-Setup-SQL-Files
+
+  # IAM Role for EC2 to use SSM
+  EC2InstanceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: DBSetupHelperRole
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ec2.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
+        - arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy
+      Policies:
+        - PolicyName: SecretsManagerAccess
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - secretsmanager:GetSecretValue
+                Resource: !Sub 'arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:agentcore-rds-credentials-*'
+        - PolicyName: CloudFormationReadAccess
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - cloudformation:DescribeStacks
+                Resource:
+                  - !Sub 'arn:aws:cloudformation:${AWS::Region}:${AWS::AccountId}:stack/${RDSStackName}/*'
+                  - !Sub 'arn:aws:cloudformation:${AWS::Region}:${AWS::AccountId}:stack/${AWS::StackName}/*'
+        - PolicyName: S3Access
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:GetObject
+                  - s3:ListBucket
+                Resource:
+                  - !GetAtt SQLFilesBucket.Arn
+                  - !Sub '${SQLFilesBucket.Arn}/*'
+
+  # Instance Profile
+  EC2InstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      InstanceProfileName: DBSetupHelperProfile
+      Roles:
+        - !Ref EC2InstanceRole
+
+  # Security Group for the helper instance
+  HelperSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: DBSetupHelper-SG
+      GroupDescription: Security group for database setup helper instance
+      VpcId:
+        Fn::ImportValue: !Sub '${RDSStackName}-VPC-ID'
+      # No inbound rules needed - SSM uses outbound only
+      SecurityGroupEgress:
+        - IpProtocol: -1
+          CidrIp: 0.0.0.0/0
+          Description: Allow all outbound traffic for SSM connectivity and database access
+      Tags:
+        - Key: Name
+          Value: DBSetupHelper-SG
+
+  # Add ingress rule to RDS security group to allow helper instance
+  RDSSecurityGroupIngress:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      GroupId:
+        Fn::ImportValue: !Sub '${RDSStackName}-RDS-SG-ID'
+      IpProtocol: tcp
+      FromPort: 5432
+      ToPort: 5432
+      SourceSecurityGroupId: !Ref HelperSecurityGroup
+      Description: Allow PostgreSQL access from DB setup helper instance
+
+  # EC2 Instance
+  HelperInstance:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: t3.micro
+      ImageId: !Ref LatestAmiId
+      IamInstanceProfile: !Ref EC2InstanceProfile
+      SubnetId:
+        Fn::ImportValue: !Sub '${RDSStackName}-Private-Subnet-1'
+      SecurityGroupIds:
+        - !Ref HelperSecurityGroup
+      Tags:
+        - Key: Name
+          Value: DB-Setup-Helper
+      # Note: No UserData - instance is in private subnet with no internet access
+      # Setup will be done manually via SSM Session Manager
+
+Outputs:
+  InstanceId:
+    Description: Instance ID of the database setup helper
+    Value: !Ref HelperInstance
+    Export:
+      Name: DBSetupHelper-InstanceId
+  
+  SQLFilesBucketName:
+    Description: S3 bucket name for SQL files
+    Value: !Ref SQLFilesBucket
+  
+  ConnectCommand:
+    Description: Command to connect via SSM Session Manager
+    Value: !Sub 'aws ssm start-session --target ${HelperInstance} --region ${AWS::Region}'
+  
+  SetupDirectory:
+    Description: Directory containing setup scripts
+    Value: /home/ssm-user/db-setup
+  
+  NextSteps:
+    Description: What to do next
+    Value: |
+      1. Upload SQL files: aws s3 cp schema.sql s3://<BucketName>/ && aws s3 cp seed_data.sql s3://<BucketName>/
+      2. Wait 3-5 minutes for VPC endpoints and NAT Gateway
+      3. Connect: aws ssm start-session --target <InstanceId>
+      4. Install tools: sudo dnf install -y postgresql15 jq
+      5. Download SQL files from S3 bucket
+      6. Run: ./setup-database.sh
+      7. Delete stack when done to stop NAT Gateway charges

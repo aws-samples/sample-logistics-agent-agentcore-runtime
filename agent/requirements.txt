@@ -1,0 +1,6 @@
+strands-agents[openai]
+strands-agents-tools
+boto3
+bedrock-agentcore
+pg8000
+aws-opentelemetry-distro

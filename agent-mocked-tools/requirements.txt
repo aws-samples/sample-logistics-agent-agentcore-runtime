@@ -1,0 +1,5 @@
+strands-agents[openai]
+strands-agents-tools
+boto3
+bedrock-agentcore
+aws-opentelemetry-distro
