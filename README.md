@@ -1,4 +1,4 @@
-# Deploy an Agent agent with VPC Connectivity using Amazon Bedrock AgentCore Runtime
+# Deploy an agent with VPC Connectivity using Amazon Bedrock AgentCore Runtime
 
 This sample demonstrates building a logistics tracking agent hosted on Amazon Bedrock AgentCore Runtime with Amazon Virtual Private Cloud (VPC) connectivity. The agent is built using Strands Agents SDK, uses an OpenAI model, and the implementation shows how to create an intelligent agent that queries a private Amazon Relational Database Service (RDS) database to track shipments and identify potential delays using local tools. Built with Infrastructure as Code using AWS CloudFormation and AWS Cloud Development Kit, this sample provides a complete architecture for deploying agents with secure database connectivity in private networks.
 
