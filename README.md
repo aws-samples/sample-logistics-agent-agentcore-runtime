@@ -1,6 +1,6 @@
 # Deploy an agent with VPC Connectivity using Amazon Bedrock AgentCore Runtime
 
-This sample demonstrates building a logistics tracking agent hosted on Amazon Bedrock AgentCore Runtime with Amazon Virtual Private Cloud (VPC) connectivity. The agent is built using Strands Agents SDK, uses an OpenAI model, and the implementation shows how to create an intelligent agent that queries a private Amazon Relational Database Service (RDS) database to track shipments and identify potential delays using local tools. Built with Infrastructure as Code using AWS CloudFormation and AWS Cloud Development Kit, this sample provides a complete architecture for deploying agents with secure database connectivity in private networks.
+This sample demonstrates building a logistics tracking agent hosted on Amazon Bedrock AgentCore Runtime with Amazon Virtual Private Cloud (VPC) connectivity. The agent is built using the Strands Agents SDK with an OpenAI model, and the implementation shows how to create an intelligent agent that queries a private Amazon Relational Database Service (RDS) database to track shipments and identify potential delays using local tools. Built with Infrastructure as Code (IaC) using AWS CloudFormation and AWS Cloud Development Kit, this sample provides a complete architecture for deploying agents with secure database connectivity in private networks.
 
 ⚠️ DISCLAIMER: This is a sample proof-of-concept (PoC) for demonstration purposes only. It is not suitable for production use and should not be deployed in production environments without significant additional development, testing, and security hardening.
 
@@ -23,11 +23,11 @@ CloudFormation templates (YAML files) are used to deploy the foundational infras
 **Part 2: AgentCore Runtime with AWS CDK**
 
 AWS Cloud Development Kit (CDK) is then used to deploy the agent to Amazon Bedrock AgentCore Runtime:
-- Bedrock AgentCore runtime
+- Amazon Bedrock AgentCore Runtime
 - IAM roles and policies
 - Agent code packaging and deployment
 
-**What is the difference between AWS Cloudformation and AWS Cloud Development Kit?** AWS CDK is a higher-level framework that when deployed generates CloudFormation templates from code (Python, TypeScript, etc.). We use CloudFormation directly for the infrastructure, while CDK is used for the agent deployment because it provides better abstractions for packaging code, managing assets, and handling complex deployment logic. Both ultimately deploy via CloudFormation stacks.
+**What is the difference between AWS CloudFormation and AWS Cloud Development Kit?** AWS CDK is a higher-level framework that synthesizes CloudFormation templates from code (Python, TypeScript, etc.) when deployed. We use CloudFormation directly for the infrastructure, while CDK is used for the agent deployment because it provides better abstractions for packaging code, managing assets, and handling complex deployment logic. Both ultimately deploy via CloudFormation stacks.
 
 This multi-step approach separates the foundational infrastructure from the agent deployment, making it easier to manage and update each component independently.
 
@@ -48,7 +48,7 @@ This multi-step approach separates the foundational infrastructure from the agen
 
 ## Architecture Overview
 
-![Architecture Diagram](images/architecture.png "AgentCore VPC Architecture")
+![AgentCore Runtime VPC architecture diagram](images/architecture.png "AgentCore Runtime VPC Architecture")
 
 
 ## Phase 1: Initial Setup and Infrastructure Deployment
@@ -85,7 +85,7 @@ sudo systemctl start docker
 
 ### Step 1.3: Create OpenAI API Key Secret
 
-If you do not already have an OpenAPI key, get your API key from: https://platform.openai.com/account/api-keys
+If you do not already have an OpenAI key, get your API key from: https://platform.openai.com/account/api-keys
 
 ```bash
 # Create the secret and capture the ARN
@@ -146,7 +146,7 @@ You should see outputs for:
 
 ### Step 2.1: Deploy Helper Instance Stack
 
-The `db-setup-helper` stack creates an Amazon EC2 instance to aid in the database setup. The instance uses the NAT Gateway from the `rds-vpc-stack` stack for internet access to download packages, and AWS Systems Manager Session Manager for instance access.
+The `db-setup-helper` stack creates an Amazon EC2 instance to assist with database setup. The instance uses the NAT Gateway from the `rds-vpc-stack` stack for internet access to download packages, and AWS Systems Manager Session Manager for instance access.
 
 ```bash
 aws cloudformation create-stack \
@@ -395,7 +395,7 @@ Ensure Docker is running, then:
 cdk deploy
 ```
 
-When prompted `Do you wish to deploy these changes' (y/n)` type `y`.
+When prompted `Do you wish to deploy these changes (y/n)?` type `y`.
 
 ### Step 3.4: Get Runtime ARN and Export for Testing
 
@@ -436,7 +436,7 @@ cdk destroy
 ```
 
 
-When prompted `Are you sure you want to delete: LogisticsAgentRuntimeStack (y/n)` type `y`.
+When prompted `Are you sure you want to delete: LogisticsAgentRuntimeStack (y/n)?` type `y`.
 
 
 ```bash
@@ -460,7 +460,7 @@ aws cloudformation delete-stack --stack-name db-setup-helper
 
 ### Troubleshooting Cleanup Issues
 
-If the RDS VPC stack deletion fails subnet or security group deletion, it's likely due to the Bedrock AgentCore ENIs that haven't been cleaned up yet. ENIs timeout after 8 hours, after which the dependent resources can be deleted. Try to delete the stack after waiting the 8 hours timeout period.
+If the RDS VPC stack deletion fails subnet or security group deletion, it's likely due to the Bedrock AgentCore ENIs that haven't been cleaned up yet. ENIs timeout after 8 hours, after which the dependent resources can be deleted. Try deleting the stack after waiting for the 8-hour timeout period.
 
 **Option B: Force Delete with Retain**
 If you can't wait up to 8 hours, force delete the stack and clean up the remaining resources manually later:
