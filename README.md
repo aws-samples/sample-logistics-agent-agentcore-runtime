@@ -23,7 +23,7 @@ CloudFormation templates (YAML files) are used to deploy the foundational infras
 - Amazon VPC Endpoints for AWS Secrets Manager, Amazon Bedrock AgentCore Runtime, Amazon CloudWatch Logs, and AWS Systems Manager
 
 
-**Phase 2: Database seed helper infrastructure deployment with AWS CloudFormation**
+**Phase 2: Database helper infrastructure deployment with AWS CloudFormation**
 
 CloudFormation templates (YAML files) are used to deploy the infrastructure needed to seed the database:
 
